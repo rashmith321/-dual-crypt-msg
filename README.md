@@ -1,10 +1,10 @@
-# 🔐 CryptoVault — Encryption Demonstration System
+#  CryptoVault — Encryption Demonstration System
 
 A full-stack web app demonstrating **Symmetric (AES-256-CBC)** and **Asymmetric (RSA-2048-OAEP)** encryption, built with Node.js + Express on the backend and pure HTML/CSS/JS on the frontend.
 
 ---
 
-## 📁 Folder Structure
+##  Folder Structure
 
 ```
 crypto-demo/
@@ -20,7 +20,7 @@ crypto-demo/
 
 ---
 
-## 🚀 Installation & Running Locally
+##  Installation & Running Locally
 
 ### Prerequisites
 - **Node.js v18+** — [Download here](https://nodejs.org/)
@@ -40,7 +40,7 @@ npx nodemon server.js
 ```
 You should see:
 ```
-🔐 CryptoDemo API running on http://localhost:3001
+ CryptoDemo API running on http://localhost:3001
 ```
 
 ### Step 3 — Open the frontend
@@ -65,7 +65,7 @@ Open `frontend/public/index.html` directly in your browser.
 
 ---
 
-## 🧪 Sample Test Inputs
+##  Sample Test Inputs
 
 ### Symmetric (AES-256)
 
@@ -105,7 +105,7 @@ Open `frontend/public/index.html` directly in your browser.
 
 ---
 
-## 🔒 Security Design Decisions
+##  Security Design Decisions
 
 | Feature | Detail |
 |---------|--------|
@@ -117,7 +117,7 @@ Open `frontend/public/index.html` directly in your browser.
 
 ---
 
-## 🌟 Features
+##  Features
 
 - ✅ AES-256-CBC symmetric encryption/decryption
 - ✅ RSA-2048-OAEP asymmetric encryption/decryption
@@ -132,7 +132,7 @@ Open `frontend/public/index.html` directly in your browser.
 
 ---
 
-## 📦 Dependencies
+##  Dependencies
 
 ### Backend
 | Package | Purpose |
@@ -145,7 +145,7 @@ Open `frontend/public/index.html` directly in your browser.
 
 ---
 
-## 🐛 Troubleshooting
+##  Troubleshooting
 
 | Problem | Solution |
 |---------|----------|
