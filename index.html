@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CryptoVault — Encryption Demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  /* ── DESIGN TOKENS ──────────────────────────────────────── */
+  :root {
+    --bg:        #080b10;
+    --surface:   #0d1117;
+    --card:      #111720;
+    --border:    #1e2d3d;
+    --accent:    #00e5ff;
+    --accent2:   #ff4d6d;
+    --green:     #00ffa3;
+    --yellow:    #ffd166;
+    --text:      #e2eaf4;
+    --muted:     #5a7a99;
+    --font-mono: 'Space Mono', monospace;
+    --font-sans: 'Syne', sans-serif;
+    --radius:    10px;
+    --glow:      0 0 20px rgba(0,229,255,.18);
+    --glow2:     0 0 20px rgba(255,77,109,.18);
+  }
+
+  /* ── RESET & BASE ───────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── GRID BACKGROUND ────────────────────────────────────── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 0;
+    background-image:
+      linear-gradient(rgba(0,229,255,.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,255,.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+  }
+
+  /* ── HEADER ─────────────────────────────────────────────── */
+  header {
+    position: relative; z-index: 10;
+    padding: 40px 48px 32px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 16px;
+  }
+  .logo {
+    display: flex; align-items: center; gap: 14px;
+  }
+  .logo-icon {
+    width: 44px; height: 44px;
+    background: linear-gradient(135deg, var(--accent), #0070ff);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; box-shadow: var(--glow);
+  }
+  .logo-text h1 { font-size: 1.7rem; font-weight: 800; letter-spacing: -0.5px; }
+  .logo-text span { font-size: .78rem; color: var(--muted); font-family: var(--font-mono); letter-spacing: 1px; }
+  .badge {
+    font-family: var(--font-mono); font-size: .72rem;
+    padding: 6px 14px; border-radius: 20px;
+    border: 1px solid var(--accent); color: var(--accent);
+    letter-spacing: 1px;
+  }
+
+  /* ── MAIN LAYOUT ────────────────────────────────────────── */
+  main {
+    position: relative; z-index: 1;
+    max-width: 1200px; margin: 0 auto;
+    padding: 40px 48px 80px;
+  }
+
+  /* ── MODE SELECTOR ──────────────────────────────────────── */
+  .mode-selector {
+    display: flex; gap: 0; margin-bottom: 40px;
+    border: 1px solid var(--border); border-radius: var(--radius);
+    overflow: hidden; width: fit-content;
+  }
+  .mode-btn {
+    font-family: var(--font-sans); font-size: .9rem; font-weight: 700;
+    padding: 14px 32px; border: none; cursor: pointer;
+    background: transparent; color: var(--muted);
+    transition: all .25s; letter-spacing: .5px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .mode-btn.active.sym { background: rgba(0,229,255,.1); color: var(--accent); }
+  .mode-btn.active.asym { background: rgba(255,77,109,.1); color: var(--accent2); }
+  .mode-btn:not(.active):hover { background: rgba(255,255,255,.04); color: var(--text); }
+  .mode-divider { width: 1px; background: var(--border); }
+
+  /* ── SECTION LABEL ──────────────────────────────────────── */
+  .section-label {
+    font-family: var(--font-mono); font-size: .7rem; letter-spacing: 2px;
+    color: var(--muted); margin-bottom: 12px; text-transform: uppercase;
+  }
+  .section-title {
+    font-size: 1.1rem; font-weight: 700; margin-bottom: 20px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .pill {
+    font-family: var(--font-mono); font-size: .65rem;
+    padding: 3px 10px; border-radius: 20px; letter-spacing: 1px;
+  }
+  .pill-cyan { background: rgba(0,229,255,.12); color: var(--accent); border: 1px solid rgba(0,229,255,.25); }
+  .pill-pink { background: rgba(255,77,109,.12); color: var(--accent2); border: 1px solid rgba(255,77,109,.25); }
+  .pill-green { background: rgba(0,255,163,.12); color: var(--green); border: 1px solid rgba(0,255,163,.25); }
+
+  /* ── TABS (ENCRYPT / DECRYPT) ───────────────────────────── */
+  .tabs {
+    display: flex; gap: 0; margin-bottom: 28px;
+    border-bottom: 1px solid var(--border);
+  }
+  .tab-btn {
+    font-family: var(--font-sans); font-size: .88rem; font-weight: 600;
+    padding: 12px 28px; border: none; background: transparent;
+    color: var(--muted); cursor: pointer; position: relative;
+    transition: color .2s;
+  }
+  .tab-btn::after {
+    content: ''; position: absolute; bottom: -1px; left: 0; right: 0;
+    height: 2px; background: var(--accent); transform: scaleX(0);
+    transition: transform .2s;
+  }
+  .tab-btn.active { color: var(--text); }
+  .tab-btn.active::after { transform: scaleX(1); }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* ── CARDS ──────────────────────────────────────────────── */
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 24px;
+    margin-bottom: 20px;
+  }
+  .card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+  @media (max-width: 700px) { .card-grid { grid-template-columns: 1fr; } }
+
+  /* ── FORM ELEMENTS ──────────────────────────────────────── */
+  label { display: block; font-size: .82rem; font-weight: 600; color: var(--muted); margin-bottom: 8px; letter-spacing: .3px; }
+  textarea, input[type="text"] {
+    width: 100%; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text); font-family: var(--font-mono);
+    font-size: .82rem; padding: 12px 14px; resize: vertical;
+    transition: border-color .2s, box-shadow .2s; outline: none;
+  }
+  textarea { min-height: 100px; }
+  textarea:focus, input:focus {
+    border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,229,255,.1);
+  }
+  textarea.output {
+    background: #090d12; border-color: #162030; color: var(--accent);
+    cursor: text; min-height: 90px;
+  }
+  textarea.output.success { border-color: rgba(0,255,163,.4); color: var(--green); }
+  textarea.output.error { border-color: rgba(255,77,109,.4); color: var(--accent2); }
+
+  /* ── BUTTONS ────────────────────────────────────────────── */
+  .btn {
+    font-family: var(--font-sans); font-size: .85rem; font-weight: 700;
+    padding: 11px 22px; border-radius: 8px; border: none; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 7px;
+    transition: all .2s; letter-spacing: .3px; white-space: nowrap;
+  }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+  .btn-primary { background: var(--accent); color: #000; }
+  .btn-primary:hover:not(:disabled) { background: #33eaff; box-shadow: 0 4px 20px rgba(0,229,255,.3); transform: translateY(-1px); }
+  .btn-danger { background: var(--accent2); color: #fff; }
+  .btn-danger:hover:not(:disabled) { background: #ff6b84; box-shadow: 0 4px 20px rgba(255,77,109,.3); transform: translateY(-1px); }
+  .btn-outline {
+    background: transparent; color: var(--muted);
+    border: 1px solid var(--border);
+  }
+  .btn-outline:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); background: rgba(0,229,255,.05); }
+  .btn-green { background: var(--green); color: #000; }
+  .btn-green:hover:not(:disabled) { background: #33ffb7; box-shadow: 0 4px 20px rgba(0,255,163,.3); transform: translateY(-1px); }
+  .btn-sm { padding: 7px 14px; font-size: .78rem; }
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+
+  /* ── KEY DISPLAY ────────────────────────────────────────── */
+  .key-box {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px; font-family: var(--font-mono);
+    font-size: .73rem; color: var(--muted); max-height: 120px;
+    overflow-y: auto; word-break: break-all; line-height: 1.6;
+  }
+  .key-box.generated { border-color: rgba(0,229,255,.3); color: var(--accent); }
+  .key-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 8px; flex-wrap: wrap; gap: 8px;
+  }
+  .key-label { font-size: .78rem; font-weight: 700; color: var(--text); }
+
+  /* ── ALERT / STATUS ─────────────────────────────────────── */
+  .alert {
+    padding: 12px 16px; border-radius: 8px; font-size: .83rem;
+    display: flex; align-items: flex-start; gap: 10px;
+    margin-top: 14px; font-family: var(--font-mono); line-height: 1.5;
+  }
+  .alert-error { background: rgba(255,77,109,.1); border: 1px solid rgba(255,77,109,.3); color: var(--accent2); }
+  .alert-success { background: rgba(0,255,163,.08); border: 1px solid rgba(0,255,163,.25); color: var(--green); }
+  .alert-info { background: rgba(0,229,255,.08); border: 1px solid rgba(0,229,255,.2); color: var(--accent); }
+  .alert.hidden { display: none; }
+
+  /* ── DROP ZONE ──────────────────────────────────────────── */
+  .drop-zone {
+    border: 2px dashed var(--border); border-radius: 8px;
+    padding: 20px; text-align: center; cursor: pointer;
+    transition: all .2s; position: relative;
+    color: var(--muted); font-size: .83rem;
+  }
+  .drop-zone:hover, .drop-zone.dragover {
+    border-color: var(--accent); background: rgba(0,229,255,.04); color: var(--accent);
+  }
+  .drop-zone input[type="file"] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+  }
+  .drop-icon { font-size: 1.8rem; margin-bottom: 6px; }
+
+  /* ── DIVIDER ────────────────────────────────────────────── */
+  .divider {
+    display: flex; align-items: center; gap: 16px; margin: 28px 0;
+    color: var(--muted); font-size: .75rem; font-family: var(--font-mono); letter-spacing: 1px;
+  }
+  .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  /* ── LOADING SPINNER ────────────────────────────────────── */
+  .spinner {
+    width: 16px; height: 16px; border: 2px solid transparent;
+    border-top-color: currentColor; border-radius: 50%;
+    animation: spin .6s linear infinite; display: inline-block;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── INFO BOX ───────────────────────────────────────────── */
+  .info-box {
+    background: rgba(0,229,255,.04); border: 1px solid rgba(0,229,255,.12);
+    border-radius: 8px; padding: 16px 18px; margin-bottom: 24px;
+    font-size: .82rem; color: var(--muted); line-height: 1.7;
+  }
+  .info-box strong { color: var(--text); }
+  .info-box.pink { background: rgba(255,77,109,.04); border-color: rgba(255,77,109,.12); }
+
+  /* ── COPIED TOAST ───────────────────────────────────────── */
+  #toast {
+    position: fixed; bottom: 30px; right: 30px; z-index: 9999;
+    background: var(--card); border: 1px solid var(--green);
+    color: var(--green); padding: 12px 22px; border-radius: 8px;
+    font-family: var(--font-mono); font-size: .82rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,.4);
+    transform: translateY(80px); opacity: 0;
+    transition: all .3s cubic-bezier(.34,1.56,.64,1);
+    pointer-events: none;
+  }
+  #toast.show { transform: translateY(0); opacity: 1; }
+
+  /* ── SCROLLBAR ──────────────────────────────────────────── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--surface); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+  /* ── RESPONSIVE ─────────────────────────────────────────── */
+  @media (max-width: 600px) {
+    header, main { padding-left: 20px; padding-right: 20px; }
+    .mode-btn { padding: 12px 18px; font-size: .82rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">🔐</div>
+    <div class="logo-text">
+      <h1>CryptoVault</h1>
+      <span>ENCRYPTION DEMONSTRATION SYSTEM</span>
+    </div>
+  </div>
+  <div class="badge">AES-256 · RSA-2048</div>
+</header>
+
+<main>
+
+  <!-- MODE SELECTOR -->
+  <div class="section-label">SELECT ENCRYPTION TYPE</div>
+  <div class="mode-selector">
+    <button class="mode-btn active sym" onclick="switchMode('symmetric')">
+      🔑 Symmetric (AES-256)
+    </button>
+    <div class="mode-divider"></div>
+    <button class="mode-btn asym" onclick="switchMode('asymmetric')">
+      🗝️ Asymmetric (RSA-2048)
+    </button>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════ -->
+  <!-- SYMMETRIC PANEL -->
+  <!-- ════════════════════════════════════════════════════════ -->
+  <div id="panel-symmetric">
+    <div class="info-box">
+      <strong>AES-256-CBC</strong> — A single <em>secret key</em> is used for both encryption and decryption.
+      The same key must be securely shared between the sender and receiver. Fast and efficient for large data.
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('sym','encrypt')">⚡ Encrypt</button>
+      <button class="tab-btn" onclick="switchTab('sym','decrypt')">🔓 Decrypt</button>
+    </div>
+
+    <!-- SYMMETRIC ENCRYPT TAB -->
+    <div id="sym-encrypt" class="tab-content active">
+      <div class="card">
+        <div class="section-title">Step 1 — Generate Secret Key <span class="pill pill-cyan">AES KEY + IV</span></div>
+        <button class="btn btn-primary" id="sym-gen-btn" onclick="symGenerateKey()">
+          🎲 Generate Secret Key
+        </button>
+        <div id="sym-key-display" style="display:none; margin-top:16px;">
+          <div class="key-header">
+            <span class="key-label">🔑 Secret Key Bundle</span>
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-outline btn-sm" onclick="copyText(symKeyBundle,'Key')">📋 Copy</button>
+              <button class="btn btn-outline btn-sm" onclick="downloadTxt(symKeyBundle,'aes-secret-key.txt')">⬇️ Download</button>
+            </div>
+          </div>
+          <div class="key-box generated" id="sym-key-box"></div>
+          <div class="alert alert-info" style="margin-top:10px;">
+            ⚠️ Save this key! It will <strong>not</strong> be stored anywhere after you leave this page.
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-title">Step 2 — Encrypt Message</div>
+        <label>Original Message</label>
+        <textarea id="sym-message" placeholder="Type your secret message here…" rows="4"></textarea>
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="symEncrypt()">🔒 Encrypt Message</button>
+        </div>
+      </div>
+
+      <div class="card" id="sym-enc-result" style="display:none;">
+        <div class="section-title">Encrypted Output <span class="pill pill-cyan">BASE64</span></div>
+        <div class="key-header" style="margin-bottom:8px;">
+          <span class="key-label" style="color:var(--muted);font-size:.8rem;">Ciphertext (AES-256-CBC)</span>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-outline btn-sm" onclick="copyText(document.getElementById('sym-encrypted-out').value,'Ciphertext')">📋 Copy</button>
+          </div>
+        </div>
+        <textarea class="output success" id="sym-encrypted-out" readonly rows="4"></textarea>
+      </div>
+
+      <div id="sym-enc-alert" class="alert hidden"></div>
+    </div>
+
+    <!-- SYMMETRIC DECRYPT TAB -->
+    <div id="sym-decrypt" class="tab-content">
+      <div class="card">
+        <div class="section-title">Decrypt with Secret Key</div>
+        <div class="alert alert-info" style="margin-bottom:16px;">
+          🔒 <strong>Security note:</strong> Keys are <em>never</em> auto-filled. Paste or upload your key below.
+        </div>
+
+        <label>Encrypted Message (Base64)</label>
+        <textarea id="sym-dec-message" placeholder="Paste the encrypted message here…" rows="4"></textarea>
+
+        <div style="margin-top:16px;">
+          <label>Secret Key Bundle</label>
+          <div class="drop-zone" id="sym-key-drop">
+            <input type="file" accept=".txt" onchange="loadKeyFile(event,'sym-dec-key','sym-key-drop')" />
+            <div class="drop-icon">📂</div>
+            <div>Drag & drop <strong>.txt</strong> key file here, or click to browse</div>
+          </div>
+          <label style="margin-top:12px;">Or paste key manually:</label>
+          <textarea id="sym-dec-key" placeholder="Paste your AES key bundle (base64 string)…" rows="3"></textarea>
+        </div>
+
+        <div class="btn-row">
+          <button class="btn btn-green" onclick="symDecrypt()">🔓 Decrypt Message</button>
+          <button class="btn btn-outline" onclick="clearFields('sym-dec')">🗑️ Clear</button>
+        </div>
+      </div>
+
+      <div class="card" id="sym-dec-result" style="display:none;">
+        <div class="section-title">Decrypted Message <span class="pill pill-green">PLAINTEXT</span></div>
+        <textarea class="output success" id="sym-decrypted-out" readonly rows="4"></textarea>
+        <div class="btn-row">
+          <button class="btn btn-outline btn-sm" onclick="copyText(document.getElementById('sym-decrypted-out').value,'Message')">📋 Copy</button>
+        </div>
+      </div>
+
+      <div id="sym-dec-alert" class="alert hidden"></div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════ -->
+  <!-- ASYMMETRIC PANEL -->
+  <!-- ════════════════════════════════════════════════════════ -->
+  <div id="panel-asymmetric" style="display:none;">
+    <div class="info-box pink">
+      <strong>RSA-2048-OAEP</strong> — A <em>key pair</em> is used: the <strong>Public Key</strong> encrypts (shareable with anyone),
+      and the <strong>Private Key</strong> decrypts (must stay secret). Message must be ≤ 190 bytes.
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('asym','encrypt')">⚡ Encrypt</button>
+      <button class="tab-btn" onclick="switchTab('asym','decrypt')">🔓 Decrypt</button>
+    </div>
+
+    <!-- ASYMMETRIC ENCRYPT TAB -->
+    <div id="asym-encrypt" class="tab-content active">
+      <div class="card">
+        <div class="section-title">Step 1 — Generate Key Pair <span class="pill pill-pink">RSA-2048</span></div>
+        <button class="btn btn-danger" id="asym-gen-btn" onclick="asymGenerateKeys()">
+          🎲 Generate Key Pair
+        </button>
+        <div id="asym-keys-display" style="display:none; margin-top:20px;">
+          <div class="card-grid">
+            <div>
+              <div class="key-header">
+                <span class="key-label">🌐 Public Key <span style="color:var(--accent);font-size:.7rem;">(Share this)</span></span>
+                <div style="display:flex;gap:6px;">
+                  <button class="btn btn-outline btn-sm" onclick="copyText(asymPublicKey,'Public Key')">📋</button>
+                  <button class="btn btn-outline btn-sm" onclick="downloadTxt(asymPublicKey,'rsa-public-key.txt')">⬇️</button>
+                </div>
+              </div>
+              <div class="key-box generated" id="asym-public-box"></div>
+            </div>
+            <div>
+              <div class="key-header">
+                <span class="key-label">🔒 Private Key <span style="color:var(--accent2);font-size:.7rem;">(Keep secret!)</span></span>
+                <div style="display:flex;gap:6px;">
+                  <button class="btn btn-outline btn-sm" onclick="copyText(asymPrivateKey,'Private Key')">📋</button>
+                  <button class="btn btn-outline btn-sm" onclick="downloadTxt(asymPrivateKey,'rsa-private-key.txt')">⬇️</button>
+                </div>
+              </div>
+              <div class="key-box generated" id="asym-private-box" style="border-color:rgba(255,77,109,.3);color:var(--accent2);"></div>
+            </div>
+          </div>
+          <div class="alert alert-info">
+            ⚠️ Download your private key now — it will not be saved anywhere on this system.
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-title">Step 2 — Encrypt with Public Key</div>
+        <label>Original Message <span style="color:var(--muted);font-weight:400;">(max 190 characters)</span></label>
+        <textarea id="asym-message" placeholder="Type your message here…" rows="4" maxlength="190" oninput="updateCharCount(this,'asym-char-count',190)"></textarea>
+        <div id="asym-char-count" style="font-family:var(--font-mono);font-size:.72rem;color:var(--muted);text-align:right;margin-top:4px;">0 / 190</div>
+        <div class="btn-row">
+          <button class="btn btn-danger" onclick="asymEncrypt()">🔒 Encrypt with Public Key</button>
+        </div>
+      </div>
+
+      <div class="card" id="asym-enc-result" style="display:none;">
+        <div class="section-title">Encrypted Output <span class="pill pill-pink">BASE64</span></div>
+        <div class="key-header" style="margin-bottom:8px;">
+          <span class="key-label" style="color:var(--muted);font-size:.8rem;">Ciphertext (RSA-2048-OAEP)</span>
+          <button class="btn btn-outline btn-sm" onclick="copyText(document.getElementById('asym-encrypted-out').value,'Ciphertext')">📋 Copy</button>
+        </div>
+        <textarea class="output success" id="asym-encrypted-out" readonly rows="5" style="border-color:rgba(255,77,109,.4);color:var(--accent2);"></textarea>
+      </div>
+
+      <div id="asym-enc-alert" class="alert hidden"></div>
+    </div>
+
+    <!-- ASYMMETRIC DECRYPT TAB -->
+    <div id="asym-decrypt" class="tab-content">
+      <div class="card">
+        <div class="section-title">Decrypt with Private Key</div>
+        <div class="alert alert-info" style="margin-bottom:16px;">
+          🔒 <strong>Security note:</strong> Only the holder of the <em>Private Key</em> can decrypt. Keys are never auto-filled.
+        </div>
+
+        <label>Encrypted Message (Base64)</label>
+        <textarea id="asym-dec-message" placeholder="Paste the RSA-encrypted message here…" rows="5"></textarea>
+
+        <div style="margin-top:16px;">
+          <label>Private Key</label>
+          <div class="drop-zone" id="asym-key-drop">
+            <input type="file" accept=".txt,.pem" onchange="loadKeyFile(event,'asym-dec-key','asym-key-drop')" />
+            <div class="drop-icon">📂</div>
+            <div>Drag & drop <strong>rsa-private-key.txt</strong> here, or click to browse</div>
+          </div>
+          <label style="margin-top:12px;">Or paste private key manually:</label>
+          <textarea id="asym-dec-key" placeholder="-----BEGIN PRIVATE KEY-----&#10;…&#10;-----END PRIVATE KEY-----" rows="5"></textarea>
+        </div>
+
+        <div class="btn-row">
+          <button class="btn btn-green" onclick="asymDecrypt()">🔓 Decrypt Message</button>
+          <button class="btn btn-outline" onclick="clearFields('asym-dec')">🗑️ Clear</button>
+        </div>
+      </div>
+
+      <div class="card" id="asym-dec-result" style="display:none;">
+        <div class="section-title">Decrypted Message <span class="pill pill-green">PLAINTEXT</span></div>
+        <textarea class="output success" id="asym-decrypted-out" readonly rows="4"></textarea>
+        <div class="btn-row">
+          <button class="btn btn-outline btn-sm" onclick="copyText(document.getElementById('asym-decrypted-out').value,'Message')">📋 Copy</button>
+        </div>
+      </div>
+
+      <div id="asym-dec-alert" class="alert hidden"></div>
+    </div>
+  </div>
+
+</main>
+
+<!-- TOAST -->
+<div id="toast">✅ Copied to clipboard!</div>
+
+<script>
+const API = 'http://localhost:3001/api';
+
+// ── State ──────────────────────────────────────────────────────
+let symKeyBundle = '';
+let asymPublicKey = '';
+let asymPrivateKey = '';
+
+// ── Mode switching ─────────────────────────────────────────────
+function switchMode(mode) {
+  document.getElementById('panel-symmetric').style.display = mode === 'symmetric' ? 'block' : 'none';
+  document.getElementById('panel-asymmetric').style.display = mode === 'asymmetric' ? 'block' : 'none';
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.querySelector(`.mode-btn.${mode === 'symmetric' ? 'sym' : 'asym'}`);
+  btn.classList.add('active');
+}
+
+// ── Tab switching ──────────────────────────────────────────────
+function switchTab(prefix, tab) {
+  const panel = document.getElementById(`panel-${prefix === 'sym' ? 'symmetric' : 'asymmetric'}`);
+  panel.querySelectorAll('.tab-btn').forEach((b, i) => {
+    b.classList.toggle('active', (i === 0 && tab === 'encrypt') || (i === 1 && tab === 'decrypt'));
+  });
+  panel.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById(`${prefix}-${tab}`).classList.add('active');
+}
+
+// ── Helpers ────────────────────────────────────────────────────
+function showAlert(id, type, msg) {
+  const el = document.getElementById(id);
+  el.className = `alert alert-${type}`;
+  el.innerHTML = msg;
+}
+function hideAlert(id) {
+  const el = document.getElementById(id);
+  el.className = 'alert hidden';
+}
+function setLoading(btnId, loading, label) {
+  const btn = document.getElementById(btnId);
+  if (!btn) return;
+  btn.disabled = loading;
+  btn.innerHTML = loading ? `<span class="spinner"></span> Working…` : label;
+}
+function copyText(text, label = 'Text') {
+  navigator.clipboard.writeText(text).then(() => showToast(`${label} copied!`));
+}
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = '✅ ' + msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+function downloadTxt(content, filename) {
+  const a = document.createElement('a');
+  a.href = 'data:text/plain;charset=utf-8,' + encodeURIComponent(content);
+  a.download = filename;
+  a.click();
+}
+function updateCharCount(el, countId, max) {
+  document.getElementById(countId).textContent = `${el.value.length} / ${max}`;
+}
+function clearFields(prefix) {
+  ['message','dec-message','dec-key'].forEach(id => {
+    const el = document.getElementById(`${prefix}-${id}`);
+    if (el) el.value = '';
+  });
+  ['result'].forEach(id => {
+    const el = document.getElementById(`${prefix}-${id}`);
+    if (el) el.style.display = 'none';
+  });
+  hideAlert(`${prefix}-alert`);
+}
+
+// ── File drop / upload ─────────────────────────────────────────
+function loadKeyFile(event, targetId, dropId) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById(targetId).value = e.target.result.trim();
+    document.getElementById(dropId).style.borderColor = 'var(--green)';
+    showToast('Key file loaded!');
+  };
+  reader.readAsText(file);
+}
+
+// Enable drag-over styling
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.drop-zone').forEach(zone => {
+    zone.addEventListener('dragover', () => zone.classList.add('dragover'));
+    zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+    zone.addEventListener('drop', () => zone.classList.remove('dragover'));
+  });
+});
+
+// ── API call wrapper ───────────────────────────────────────────
+async function apiCall(endpoint, body) {
+  const res = await fetch(`${API}${endpoint}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  return res.json();
+}
+
+// ══════════════════════════════════════════════════════════════
+// SYMMETRIC
+// ══════════════════════════════════════════════════════════════
+
+async function symGenerateKey() {
+  setLoading('sym-gen-btn', true, '🎲 Generate Secret Key');
+  hideAlert('sym-enc-alert');
+  try {
+    const data = await apiCall('/symmetric/generate-key', {});
+    if (!data.success) throw new Error(data.error);
+    symKeyBundle = data.keyBundle;
+    document.getElementById('sym-key-box').textContent = symKeyBundle;
+    document.getElementById('sym-key-display').style.display = 'block';
+    showToast('AES key generated!');
+  } catch (err) {
+    showAlert('sym-enc-alert', 'error', '❌ ' + err.message);
+  }
+  setLoading('sym-gen-btn', false, '🎲 Generate Secret Key');
+}
+
+async function symEncrypt() {
+  const message = document.getElementById('sym-message').value.trim();
+  hideAlert('sym-enc-alert');
+  if (!message) { showAlert('sym-enc-alert', 'error', '❌ Please enter a message.'); return; }
+  if (!symKeyBundle) { showAlert('sym-enc-alert', 'error', '❌ Generate a secret key first (Step 1).'); return; }
+
+  try {
+    const data = await apiCall('/symmetric/encrypt', { message, keyBundle: symKeyBundle });
+    if (!data.success) throw new Error(data.error);
+    document.getElementById('sym-encrypted-out').value = data.encryptedMessage;
+    document.getElementById('sym-enc-result').style.display = 'block';
+    showAlert('sym-enc-alert', 'success', '✅ Message encrypted successfully! Download your key to decrypt later.');
+  } catch (err) {
+    showAlert('sym-enc-alert', 'error', '❌ ' + err.message);
+  }
+}
+
+async function symDecrypt() {
+  const encMsg = document.getElementById('sym-dec-message').value.trim();
+  const keyBundle = document.getElementById('sym-dec-key').value.trim();
+  hideAlert('sym-dec-alert');
+  document.getElementById('sym-dec-result').style.display = 'none';
+
+  if (!encMsg) { showAlert('sym-dec-alert', 'error', '❌ Please paste the encrypted message.'); return; }
+  if (!keyBundle) { showAlert('sym-dec-alert', 'error', '❌ Please paste or upload the secret key.'); return; }
+
+  try {
+    const data = await apiCall('/symmetric/decrypt', { encryptedMessage: encMsg, keyBundle });
+    if (!data.success) throw new Error(data.error);
+    document.getElementById('sym-decrypted-out').value = data.decryptedMessage;
+    document.getElementById('sym-dec-result').style.display = 'block';
+    showAlert('sym-dec-alert', 'success', '✅ Message decrypted successfully!');
+  } catch (err) {
+    showAlert('sym-dec-alert', 'error', '❌ ' + err.message);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// ASYMMETRIC
+// ══════════════════════════════════════════════════════════════
+
+async function asymGenerateKeys() {
+  setLoading('asym-gen-btn', true, '🎲 Generate Key Pair');
+  hideAlert('asym-enc-alert');
+  try {
+    const data = await apiCall('/asymmetric/generate-keys', {});
+    if (!data.success) throw new Error(data.error);
+    asymPublicKey = data.publicKey;
+    asymPrivateKey = data.privateKey;
+    document.getElementById('asym-public-box').textContent = asymPublicKey;
+    document.getElementById('asym-private-box').textContent = asymPrivateKey;
+    document.getElementById('asym-keys-display').style.display = 'block';
+    showToast('RSA key pair generated!');
+  } catch (err) {
+    showAlert('asym-enc-alert', 'error', '❌ ' + err.message);
+  }
+  setLoading('asym-gen-btn', false, '🎲 Generate Key Pair');
+}
+
+async function asymEncrypt() {
+  const message = document.getElementById('asym-message').value.trim();
+  hideAlert('asym-enc-alert');
+  if (!message) { showAlert('asym-enc-alert', 'error', '❌ Please enter a message.'); return; }
+  if (!asymPublicKey) { showAlert('asym-enc-alert', 'error', '❌ Generate a key pair first (Step 1).'); return; }
+
+  try {
+    const data = await apiCall('/asymmetric/encrypt', { message, publicKey: asymPublicKey });
+    if (!data.success) throw new Error(data.error);
+    document.getElementById('asym-encrypted-out').value = data.encryptedMessage;
+    document.getElementById('asym-enc-result').style.display = 'block';
+    showAlert('asym-enc-alert', 'success', '✅ Message encrypted with Public Key! Use your Private Key to decrypt.');
+  } catch (err) {
+    showAlert('asym-enc-alert', 'error', '❌ ' + err.message);
+  }
+}
+
+async function asymDecrypt() {
+  const encMsg = document.getElementById('asym-dec-message').value.trim();
+  const privateKey = document.getElementById('asym-dec-key').value.trim();
+  hideAlert('asym-dec-alert');
+  document.getElementById('asym-dec-result').style.display = 'none';
+
+  if (!encMsg) { showAlert('asym-dec-alert', 'error', '❌ Please paste the encrypted message.'); return; }
+  if (!privateKey) { showAlert('asym-dec-alert', 'error', '❌ Please paste or upload the private key.'); return; }
+
+  try {
+    const data = await apiCall('/asymmetric/decrypt', { encryptedMessage: encMsg, privateKey });
+    if (!data.success) throw new Error(data.error);
+    document.getElementById('asym-decrypted-out').value = data.decryptedMessage;
+    document.getElementById('asym-dec-result').style.display = 'block';
+    showAlert('asym-dec-alert', 'success', '✅ Message decrypted successfully with Private Key!');
+  } catch (err) {
+    showAlert('asym-dec-alert', 'error', '❌ ' + err.message);
+  }
+}
+</script>
+</body>
+</html>
